@@ -1,0 +1,199 @@
+.\" Originally written by Jan Schaumann
+.\" <jschauma@netmeister.org> in October 2026.
+.Dd October 29, 2026
+.Dt emudhra-cleanup 1
+.Os
+.Sh NAME
+.Nm emudhra-cleanup
+.Nd prune CA bundles from eMudhra related root certificates
+.Sh SYNOPSIS
+.Nm
+.Op Fl Vbhlv
+.Op Fl d Ar path
+.Op Fl f Ar file
+.Op Fl p Ar pip
+.Sh DESCRIPTION
+The
+.Nm
+command attempts to remove eMudhra related root
+certificates from common CA bundles.
+.Sh OPTIONS
+The following options are supported by
+.Nm :
+.Bl -tag -width __file__
+.It Fl V
+Print version number and exit.
+.It Fl b
+Create a backup file of any modified bundles.
+.It Fl d Ar path
+Try to detect CA bundles containing the roots located
+under
+.Ar path ,
+but don't modify them.
+Can be specified multiple times.
+.It Fl f Ar file
+Prune this given file or directory.
+Can be specified multiple times.
+.It Fl h
+Print a short usage statement and exit.
+.It Fl l
+Enable diagnostic logging.
+.It Fl p Ar path
+Fix the given pip.
+.Ar path
+must be an absolute path to a pip or python
+executable.
+.It Fl v
+Be verbose.
+Can be specified multiple times to increase verbosity.
+.El
+.Sh DETAILS
+Many of the code examples shown online to update CA
+bundles to remove the root CA certificates affected by
+the eMudhra compromise assume that a cert bundle
+contains comments annotating the certificates, but
+that is not always the case.
+If you have bundles that consist entirely and only of
+PEM certificates, those commands will not remove the
+affected roots.
+.Pp
+Instead, you'd have to decode each certificate or
+compare the entire PEM blob.
+That's tedious.
+.Pp
+.Nm
+is intended to help complete this task.
+It will look for the roots in a few common places, or
+let you specify a bundle using the
+.Fl f
+flag.
+.Pp
+If the
+.Fl d
+flag is specified,
+.Nm
+will either inspect the given bundle, or search the
+given path for likely candidates and output those that
+contain the roots in question.
+.Pp
+Note: the search is done using
+.Xr find 1
+with the
+.Xr x
+flag, meaning you have to specify each mount point
+explicitly.
+.Sh LOGGING
+If the
+.Fl l
+flag is specified,
+.Nm
+will log diagnostic messages using
+.Xr logger 1
+with a tag of 'emudhra-cleanup'.
+.Sh CA BUNDLES
+By default,
+.Nm
+will look in a few common locations for files that are
+likely to be CA cert bundles.
+Specifically, it looks at the following:
+.Bl
+.It
+/etc/ssl/cert.pem
+.It
+/etc/ssl/ca-bundle.pem
+.It
+/etc/pki/tls/certs/ca-bundle.crt
+.It
+/etc/ssl/certs/ca-certificates.crt
+.El
+.Pp
+If the directory '/opt/homebrew' exists, then
+.Nm
+will also consider the files
+\'/opt/homebrew/etc/*/cert.pem'.
+.Pp
+If the file '/etc/ca-certificates.conf' exists,
+.Nm
+will add exclusion parameters to it and subsequently
+attempt to run
+.Xr update-ca-certificates 8 .
+.Pp
+If the
+.Fl f
+flag is given, only the specified
+.Ar file(s)
+will be considered.
+.Sh ROOTS REMOVED
+.Nm
+removes the following root CA certificates from the CA
+bundles it operates on:
+.Bl
+.It
+emSign Root TLS CA - G3
+7DD78D5F4F13459A83DFF9ABBBA62EDBAF6F2D102BF257FD712F4D9F2746ED8D
+.It
+emSign Root CS CA - G3
+F2EDAAFF3D9B701FB4D14C9F285F8C0BAD90FC3BCC1FA07D47F4718EDABA34A5
+.It
+emSign ECC Root CA - G3
+86A1ECBA089C4A8D3BBE2734C612BA341D813E043CF9E8A862CD5C57A36BBE6B
+.It
+AAA Certificate Services
+D7A7A0FB5D7E2731D771E9484EBCDEF71D5F0C3E0A2948782BC83EE0EA699EF4
+.El
+.Sh PIP
+Python's "pip" may use a built-in CA bundle.
+.Nm
+can try to point pip to a fixed CA bundle.
+For this, specify the python or pip executable via the
+.Fl p
+flag.
+.Nm
+will update (or create, if it does not yet exist) the
+\'sitecustomize.py' configuration file to set the
+.Ev PIP_CERT
+environment variable.
+.Pp
+If the current process's environment does not have
+this variable set, then
+.Nm
+will set the value in 'sitecustomize.py' to the file
+.Ar /etc/ssl/cert.pem ,
+if it exists.
+.Sh EXAMPLES
+To verbosely fix the default set of CA bundles, while
+logging all messages and creating backup files of each
+modified bundle:
+.Bd -literal -offset indent
+emudhra-cleanup -b -l -v -v -v -v
+.Ed
+.Pp
+To check, but not modify, all CA bundles under /usr/local:
+.Bd -literal -offset indent
+emudhra-cleanup -d /usr/local
+.Ed
+.Pp
+To check, but not modify, specific files:
+.Bd -literal -offset indent
+emudhra-cleanup -d /usr/local/etc/cert.pem -d /etc/mycerts.pem
+.Ed
+.Pp
+To update homebrew's pip3.11:
+.Bd -literal -offset indent
+emudhra-cleanup -p /opt/homebrew/bin/pip3.11
+.Ed
+.Sh ENVIRONMENT
+.Bl -tag -width PIP_CERT
+.It Ev PIP_CERT
+The path name to the bundle to use for python/pip.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh HISTORY
+.Nm
+was originally written by
+.An Jan Schaumann
+.Aq jschauma@netmeister.org
+in October 2026.
+.Sh BUGS
+Please file bugs and feature requests by emailing the author.
