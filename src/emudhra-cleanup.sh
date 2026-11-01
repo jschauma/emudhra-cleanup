@@ -23,13 +23,14 @@ TMPDIR=""
 BACKUP="no"
 BUNDLE_FILES=""
 DEFAULT_BUNDLE="/etc/ssl/cert.pem"
+DETECT_ONLY="no"
 SEARCH_PATHS=""
 LOGGING="no"
 OS="$(uname)"
 PROGNAME="${0##*/}"
 PYTHON_PIP=""
 VERBOSITY=0
-VERSION="0.3"
+VERSION="0.4"
 
 KNOWN_BUNDLES="
 ${DEFAULT_BUNDLE}
@@ -267,7 +268,7 @@ updateOneBundle() {
 		return
 	fi
 
-	if [ -n "${SEARCH_PATHS}" ]; then
+	if [ x"${DETECT_ONLY}" = x"yes" ]; then
 		echo "${bundle}"
 		rm "${TMPDIR}/before"
 		return
@@ -394,6 +395,7 @@ while getopts 'Vbd:f:hlp:v' opt; do
 		;;
 		d)
 			p="${OPTARG}"
+			DETECT_ONLY="yes"
 			if [ -f "${p}" ]; then
 				BUNDLE_FILES="${BUNDLE_FILES}
 ${p}"
