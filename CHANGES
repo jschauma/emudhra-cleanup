@@ -1,2 +1,8 @@
+Version 0.5 (2026-11-04)
+* expand default search to look for '.pem' and '.crt' files
+
+Version 0.4 (2026-11-01)
+* don't try to update if '-d' was given, even if only one file is checked.
+
 Version 0.3 (2026-10-30)
  * Hello, 4!

@@ -30,7 +30,7 @@ OS="$(uname)"
 PROGNAME="${0##*/}"
 PYTHON_PIP=""
 VERBOSITY=0
-VERSION="0.4"
+VERSION="0.5"
 
 KNOWN_BUNDLES="
 ${DEFAULT_BUNDLE}
@@ -96,7 +96,7 @@ findBundles() {
 		if [ x"${OS}" = x"Linux" ]; then
 			cmd="find '${p}' -xdev"
 		fi
-		cmd="${cmd} -name '*cert.pem' -print 2>/dev/null"
+		cmd="${cmd} -name '*.pem' -o -name '*.crt' -print 2>/dev/null"
 
 		verbose "Running \"${cmd}\"..." 2
 		set +e
