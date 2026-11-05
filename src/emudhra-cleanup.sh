@@ -18,7 +18,7 @@ umask 077
 PATH=/bin:/usr/bin:/sbin:/usr/bin
 export PATH
 
-TMPDIR=""
+TDIR=""
 
 BACKUP="no"
 BUNDLE_FILES=""
@@ -30,7 +30,7 @@ OS="$(uname)"
 PROGNAME="${0##*/}"
 PYTHON_PIP=""
 VERBOSITY=0
-VERSION="0.5"
+VERSION="0.6"
 
 KNOWN_BUNDLES="
 ${DEFAULT_BUNDLE}
@@ -68,7 +68,7 @@ backup() {
 }
 
 cleanup() {
-	rm -fr "${TMPDIR}"
+	rm -fr "${TDIR}"
 }
 
 error() {
@@ -84,7 +84,7 @@ findBundles() {
 
 	verbose "Finding possible CA bundles..."
 
-	>"${TMPDIR}/bundles"
+	>"${TDIR}/bundles"
 
 	oIFS=""
 	IFS="
@@ -100,12 +100,12 @@ findBundles() {
 
 		verbose "Running \"${cmd}\"..." 2
 		set +e
-		eval ${cmd} >> "${TMPDIR}/bundles"
+		eval ${cmd} >> "${TDIR}/bundles"
 		set -e
 	done
 	IFS="${oIFS}"
 
-	num=$(wc -l <"${TMPDIR}/bundles")
+	num=$(wc -l <"${TDIR}/bundles")
 
 	if [ ${num} -eq 0 ]; then
 		verbose "No bundles found."
@@ -217,7 +217,7 @@ ${HOMEBREW}/etc/*/cert.pem"
 "
 	if [ -n "${SEARCH_PATHS}" ]; then
 		bundles="${BUNDLE_FILES}
-$(cat "${TMPDIR}/bundles")"
+$(cat "${TDIR}/bundles")"
 	fi
 
 	for b in ${bundles}; do
@@ -261,16 +261,16 @@ updateOneBundle() {
 
 	openssl crl2pkcs7 -nocrl -certfile "${bundle}" 2>/dev/null |	\
 		openssl pkcs7 -print_certs -noout 2>/dev/null |		\
-		grep ^subject | sort > "${TMPDIR}/before"
-	if ! grep -q -E "${SUBJECTS_PATTERN}" "${TMPDIR}/before" ; then
+		grep ^subject | sort > "${TDIR}/before"
+	if ! grep -q -E "${SUBJECTS_PATTERN}" "${TDIR}/before" ; then
 		verbose "${bundle} is clear." 3
-		rm "${TMPDIR}/before"
+		rm "${TDIR}/before"
 		return
 	fi
 
 	if [ x"${DETECT_ONLY}" = x"yes" ]; then
 		echo "${bundle}"
-		rm "${TMPDIR}/before"
+		rm "${TDIR}/before"
 		return
 	fi
 
@@ -281,7 +281,7 @@ updateOneBundle() {
 	# that, we actually process each PEM encoded
 	# cert, then rebuild the bundle.
 	(
-	cd "${TMPDIR}"
+	cd "${TDIR}"
 	verbose "Splitting ${bundle} into individual files..." 3
 	openssl crl2pkcs7 -nocrl -certfile "${bundle}" |	\
 		openssl pkcs7 -print_certs | 			\
@@ -315,7 +315,7 @@ updateOneBundle() {
 
 	openssl crl2pkcs7 -nocrl -certfile new-bundle |	\
 		openssl pkcs7 -print_certs -noout |	\
-		grep ^subject | sort > "${TMPDIR}/after"
+		grep ^subject | sort > "${TDIR}/after"
 
 	set +e
 	diff=$(diff -bu before after | grep -c ^-subject)
@@ -461,7 +461,7 @@ fi
 
 trap cleanup 0
 
-TMPDIR="$(mktemp -d ${TMPDIR:-/tmp}/emudhra-cleanup.XXXX)"
+TDIR="$(mktemp -d ${TMPDIR:-/tmp}/emudhra-cleanup.XXXX)"
 
 SUBJECTS_PATTERN="$(echo "${ROOTS}" | sed -e 's/.*|//' | \
 			tr '\n' '|' | sed -e 's/^|/(/' -e 's/||/)/')"
