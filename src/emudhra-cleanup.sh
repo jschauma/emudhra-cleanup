@@ -30,7 +30,7 @@ OS="$(uname)"
 PROGNAME="${0##*/}"
 PYTHON_PIP=""
 VERBOSITY=0
-VERSION="0.6"
+VERSION="0.7"
 
 KNOWN_BUNDLES="
 ${DEFAULT_BUNDLE}
@@ -250,12 +250,27 @@ updateConf() {
 
 updateOneBundle() {
 	local readonly bundle="${1}"
+	local format="PEM"
 
 	verbose "Inspecting '${bundle}'..." 2
 
 	if [ ! -r "${bundle}" ]; then
 		# No need to warn, we expect that some
 		# of the files won't be readable.
+		return
+	fi
+
+	if ! grep -q -- "-----BEGIN CERTIFICATE-----" "${bundle}"; then
+		set +e
+		<"${bundle}" openssl x509 -inform DER -noout -subject |	\
+			grep -q -E "${SUBJECTS_PATTERN}"
+		if [ $? -eq 0 ]; then
+			warn "Not removing single-cert DER file '${bundle}'."
+			echo "${bundle}"
+		else
+			verbose "${bundle} is clear." 3
+		fi
+		set -e
 		return
 	fi
 
