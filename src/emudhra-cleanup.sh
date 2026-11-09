@@ -30,7 +30,7 @@ OS="$(uname)"
 PROGNAME="${0##*/}"
 PYTHON_PIP=""
 VERBOSITY=0
-VERSION="0.8"
+VERSION="0.9"
 
 KNOWN_BUNDLES="
 ${DEFAULT_BUNDLE}
@@ -96,7 +96,7 @@ findBundles() {
 		if [ x"${OS}" = x"Linux" ]; then
 			cmd="find '${p}' -xdev"
 		fi
-		cmd="${cmd} -name '*.pem' -o -name '*.crt' -print 2>/dev/null"
+		cmd="${cmd} \( -name '*.pem' -o -name '*.crt' \) -print 2>/dev/null"
 
 		verbose "Running \"${cmd}\"..." 2
 		set +e
@@ -267,7 +267,7 @@ updateOneBundle() {
 
 	if ! grep -q -- "-----BEGIN CERTIFICATE-----" "${bundle}"; then
 		set +e
-		<"${bundle}" openssl x509 -inform DER -noout -subject |	\
+		<"${bundle}" openssl x509 -inform DER -noout -subject 2>/dev/null |	\
 			grep -q -E "${SUBJECTS_PATTERN}"
 		if [ $? -eq 0 ]; then
 			warn "Not removing single-cert DER file '${bundle}'."
