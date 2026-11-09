@@ -30,7 +30,7 @@ OS="$(uname)"
 PROGNAME="${0##*/}"
 PYTHON_PIP=""
 VERBOSITY=0
-VERSION="0.7"
+VERSION="0.8"
 
 KNOWN_BUNDLES="
 ${DEFAULT_BUNDLE}
@@ -257,6 +257,11 @@ updateOneBundle() {
 	if [ ! -r "${bundle}" ]; then
 		# No need to warn, we expect that some
 		# of the files won't be readable.
+		return
+	fi
+
+	if [ ! -f "${bundle}" ]; then
+		warn "'${bundle}' is not a regular file."
 		return
 	fi
 
